@@ -3,6 +3,7 @@ package com.example.demo.app.task;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -27,7 +28,8 @@ import jakarta.validation.Valid;
 public class TaskController {
 
     private final TaskService taskService;
-
+    
+    @Autowired
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
@@ -43,10 +45,12 @@ public class TaskController {
     public String task(TaskForm taskForm, Model model) {
 
     	//新規登録か更新かを判断する仕掛け
+    	taskForm.setNewTask(true);
 
         //Taskのリストを取得する
-
-        model.addAttribute("list", "");
+    	List<Task> list = taskService.findAll();
+    	
+        model.addAttribute("list", list);
         model.addAttribute("title", "タスク一覧");
 
         return "task/index";
@@ -64,24 +68,30 @@ public class TaskController {
     	@Valid @ModelAttribute TaskForm taskForm,
         BindingResult result,
         Model model) {
-
-        if (!result.hasErrors()) {
-        	//削除してください
-        	Task task = null;
-
+    	
         	//TaskFormのデータをTaskに格納
+//        	Task task = new Task();
+//        	task.setUserId(1);
+//        	task.setTypeId(taskForm.getTypeId());
+//        	task.setTitle(taskForm.getTitle());
+//        	task.setDetail(taskForm.getDetail());
+//        	task.setDeadline(taskForm.getDeadline());
+        	
+        	Task task = makeTask(taskForm, 0);
+        	if (!result.hasErrors()) {
+        		
+        		//一件挿入後リダイレクト
+        		taskService.insert(task);
+        		return "redirect:/task";
 
-        	//一件挿入後リダイレクト
-
-            return "";
-        } else {
-            taskForm.setNewTask(true);
-            model.addAttribute("taskForm", taskForm);
-            List<Task> list = taskService.findAll();
-            model.addAttribute("list", list);
-            model.addAttribute("title", "タスク一覧（バリデーション）");
-            return "task/index";
-        }
+	        } else {
+	            taskForm.setNewTask(true);
+	            model.addAttribute("taskForm", taskForm);
+	            List<Task> list = taskService.findAll();
+	            model.addAttribute("list", list);
+	            model.addAttribute("title", "タスク一覧（バリデーション）");
+	            return "task/index";
+	        }
     }
 
     /**
